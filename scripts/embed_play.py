@@ -3,8 +3,12 @@ import torch
 import data
 from models import imagebind_model
 from models.imagebind_model import ModalityType
+from os import listdir, makedirs
 from os.path import join
+from pathlib import Path
 import platform
+import fnmatch
+from typing import Callable, List
 
 # relative to current working directory, i.e. repository root of embedding-compare
 img_bind_dir = 'lib/ImageBind'
@@ -39,18 +43,19 @@ with torch.no_grad():
 print(platform.python_version())
 print(torch.__version__)
 
-print(
-    'Vision x Text: ',
-    torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.TEXT].T, dim=-1),
-)
-print(
-    'Audio x Text: ',
-    torch.softmax(embeddings[ModalityType.AUDIO] @ embeddings[ModalityType.TEXT].T, dim=-1),
-)
-print(
-    'Vision x Audio: ',
-    torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.AUDIO].T, dim=-1),
-)
+
+get_out_ix: Callable[[str], int] = lambda stem: int(stem.split('_', maxsplit=1)[0])
+out_root = 'out'
+makedirs(out_root, exist_ok=True)
+
+out_dirs_unsorted: List[str] = fnmatch.filter(listdir(out_root), f'*_out')
+out_keyer: Callable[[str], int] = lambda fname: get_out_ix(Path(fname).stem)
+out_dirs: List[str] = [join(out_root, out_dir) for out_dir in sorted(out_dirs_unsorted, key=out_keyer)]
+next_ix = get_out_ix(Path(out_dirs[-1]).stem)+1 if out_dirs else 0
+out_dir: str = join(out_root, f'{next_ix:03d}_out')
+makedirs(out_dir)
+
+print(f'Created output directory: {out_dir}')
 
 # Expected output:
 #
