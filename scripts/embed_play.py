@@ -6,10 +6,9 @@ from models.imagebind_model import ModalityType, ImageBindModel
 from os import listdir, makedirs
 from os.path import join
 from pathlib import Path
-import platform
 import fnmatch
 from typing import Callable, List
-from tabulate import tabulate
+from src.tabulation import tabulate_similarity
 
 # relative to current working directory, i.e. repository root of embedding-compare
 img_bind_dir = 'lib/ImageBind'
@@ -50,26 +49,22 @@ with torch.no_grad():
 # )
 print(
   "Vision x Text: \n",
-  tabulate(
-    [
-      [stem, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for stem, row in zip(
-        image_stems,
-        torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.TEXT].T, dim=-1).cpu().numpy()
-      )
-    ],
-    headers=['image', *text_list],
+  tabulate_similarity(
+    mode0=embeddings[ModalityType.VISION],
+    mode1=embeddings[ModalityType.TEXT],
+    mode0_modality=ModalityType.VISION,
+    mode0_labels=image_stems,
+    mode1_labels=text_list,
   )
 )
 print(
   "Text x Vision: \n",
-  tabulate(
-    [
-      [label, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for label, row in zip(
-        text_list,
-        torch.softmax(embeddings[ModalityType.TEXT] @ embeddings[ModalityType.VISION].T, dim=-1).cpu().numpy()
-      )
-    ],
-    headers=['label', *image_stems],
+  tabulate_similarity(
+    mode0=embeddings[ModalityType.TEXT],
+    mode1=embeddings[ModalityType.VISION],
+    mode0_modality=ModalityType.TEXT,
+    mode0_labels=text_list,
+    mode1_labels=image_stems,
   )
 )
 # print(
@@ -78,26 +73,22 @@ print(
 # )
 print(
   "Audio x Text: \n",
-  tabulate(
-    [
-      [stem, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for stem, row in zip(
-        audio_stems,
-        torch.softmax(embeddings[ModalityType.AUDIO] @ embeddings[ModalityType.TEXT].T, dim=-1).cpu().numpy()
-      )
-    ],
-    headers=['image', *text_list],
+  tabulate_similarity(
+    mode0=embeddings[ModalityType.AUDIO],
+    mode1=embeddings[ModalityType.TEXT],
+    mode0_modality=ModalityType.AUDIO,
+    mode0_labels=audio_stems,
+    mode1_labels=text_list,
   )
 )
 print(
   "Text x Audio: \n",
-  tabulate(
-    [
-      [label, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for label, row in zip(
-        text_list,
-        torch.softmax(embeddings[ModalityType.TEXT] @ embeddings[ModalityType.AUDIO].T, dim=-1).cpu().numpy()
-      )
-    ],
-    headers=['label', *audio_stems],
+  tabulate_similarity(
+    mode0=embeddings[ModalityType.TEXT],
+    mode1=embeddings[ModalityType.AUDIO],
+    mode0_modality=ModalityType.TEXT,
+    mode0_labels=text_list,
+    mode1_labels=audio_stems,
   )
 )
 # print(
@@ -106,26 +97,22 @@ print(
 # )
 print(
   "Audio x Vision: \n",
-  tabulate(
-    [
-      [stem, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for stem, row in zip(
-        audio_stems,
-        torch.softmax(embeddings[ModalityType.AUDIO] @ embeddings[ModalityType.VISION].T, dim=-1).cpu().numpy()
-      )
-    ],
-    headers=['image', *image_stems],
+  tabulate_similarity(
+    mode0=embeddings[ModalityType.AUDIO],
+    mode1=embeddings[ModalityType.VISION],
+    mode0_modality=ModalityType.AUDIO,
+    mode0_labels=audio_stems,
+    mode1_labels=image_stems,
   )
 )
 print(
   "Vision x Audio: \n",
-  tabulate(
-    [
-      [label, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for label, row in zip(
-        image_stems,
-        torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.AUDIO].T, dim=-1).cpu().numpy()
-      )
-    ],
-    headers=['label', *audio_stems],
+  tabulate_similarity(
+    mode0=embeddings[ModalityType.VISION],
+    mode1=embeddings[ModalityType.AUDIO],
+    mode0_modality=ModalityType.VISION,
+    mode0_labels=image_stems,
+    mode1_labels=audio_stems,
   )
 )
 
