@@ -5,19 +5,21 @@ import fnmatch
 from pathlib import Path
 from numpy import array
 from numpy.typing import NDArray
-from src.markup import markup_similarities
+from src.markup import markup_similarities, out_assets_dir_rel
 from dominate import document
 from models.imagebind_model import ModalityType
 from shutil import copyfile
 
 html_assets_dir = 'html_assets'
-assets_dir = 'assets'
+in_assets_dir = 'assets'
 
 text_list=['Reimu', 'Flandre', 'Kochiya Sanae', 'Patchouli Knowlege', 'Rem', 'Saber', 'Matou Sakura', 'Youmu', 'anime girl', 'illustration', 'national anthem', 'bossa nova', 'chiptune']
 image_stems = ['reimu1', 'flandre1', 'sanae1', 'patchouli0', 'rem0', 'saber1', 'sakura1', 'youmu4']
-image_paths=[join(assets_dir, f'{asset}.jpg') for asset in image_stems]
+image_paths_in=[join(in_assets_dir, f'{asset}.jpg') for asset in image_stems]
+image_paths_out=[join(out_assets_dir_rel, f'{asset}.jpg') for asset in image_stems]
 audio_stems=['reimu', 'flandre', 'sanae', 'patchouli', 'rem1', 'saber', 'sakura-saber', 'youmu', 'british-anthem']
-audio_paths=[join(assets_dir, f'{asset}.wav') for asset in audio_stems]
+audio_paths_in=[join(in_assets_dir, f'{asset}.wav') for asset in audio_stems]
+audio_paths_out=[join(out_assets_dir_rel, f'{asset}.wav') for asset in audio_stems]
 
 # Vision x Text: 
 #  image         Reimu    Flandre    Kochiya Sanae    Patchouli Knowlege    Rem    Saber    Matou Sakura    Youmu    anime girl    illustration    national anthem    bossa nova    chiptune
@@ -58,19 +60,22 @@ makedirs(out_root, exist_ok=True)
 # print(f'Created output directory: {out_dir}')
 
 out_dir = join(out_root, '000_out')
-out_assets_dir = join(out_dir, 'assets')
-makedirs(out_assets_dir, exist_ok=True)
+out_assets_dir_qual = join(out_dir, out_assets_dir_rel)
+makedirs(out_assets_dir_qual, exist_ok=True)
 out_file = join(out_dir, 'vision_text_similarity.html')
-for img_path in image_paths:
-  copyfile(img_path, join(out_assets_dir, Path(img_path).name))
+for img_path in image_paths_in:
+  copyfile(img_path, join(out_assets_dir_qual, Path(img_path).name))
 copyfile(join(html_assets_dir, 'style.css'), join(out_dir, 'style.css'))
+# copyfile(join(html_assets_dir, 'interaction.mjs'), join(out_dir, 'interaction.mjs'))
 
 doc: document = markup_similarities(
   similarity=similarities,
   mode0_modality=ModalityType.VISION,
   mode1_modality=ModalityType.TEXT,
-  mode0_labels=image_stems,
-  mode1_labels=text_list,
+  mode0_names=image_stems,
+  mode0_asset_references=image_paths_out,
+  mode1_names=text_list,
+  mode1_asset_references=None,
 )
 print(doc)
 

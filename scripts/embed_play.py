@@ -90,6 +90,7 @@ print(
 )
 print(
   "Text x Audio: \n",
+  tabulate_similarity(
     similarity=get_similarity(
       embeddings[ModalityType.TEXT],
       embeddings[ModalityType.AUDIO],

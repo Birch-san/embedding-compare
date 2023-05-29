@@ -8,3 +8,76 @@ figure {
   margin-right: 0;
   margin-left: 0;
 }
+figure figcaption {
+  display: none;
+}
+figure figcaption.reveal {
+  display: initial;
+}
+
+table {
+  border-collapse: collapse;
+}
+
+tbody td {
+  padding: 0;
+}
+
+img {
+  display: block;
+}
+
+.similarity-number {
+  font-family: 'Monaco', monospace;
+  text-align: center;
+}
+
+.similarity-none {
+  color: lightgrey;
+}
+
+.target-label {
+  width: 5em;
+  min-width: 5em;
+  background-color: aliceblue;
+}
+
+.target-label div.label-text {
+  transform: rotate(310deg);
+  transform-origin: left;
+  top: 3em;
+  position: relative;
+  height: 6em;
+  text-align: left;
+  left: 3.5em;
+}
+
+body {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+}
+
+tr.subject-target-detail th {
+  font-weight: normal;
+}
+
+tr.subject-target-detail th.subject-category {
+  vertical-align: bottom;
+  background-color: floralwhite;
+}
+
+tr.subject-target-detail th.subject-ref {
+  vertical-align: bottom;
+  background-color: floralwhite;
+}
+
+.subjects {
+  background-color: khaki;
+}
+
+.targets {
+  background-color: cornflowerblue;
+}
+
+tbody tr td.subject-ref {
+  padding-right: 0.5em;
+}
