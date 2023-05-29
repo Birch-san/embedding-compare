@@ -68,6 +68,7 @@ copyfile(join(html_assets_dir, 'style.css'), join(out_dir, 'style.css'))
 doc: document = markup_similarities(
   similarity=similarities,
   mode0_modality=ModalityType.VISION,
+  mode1_modality=ModalityType.TEXT,
   mode0_labels=image_stems,
   mode1_labels=text_list,
 )
