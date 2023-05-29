@@ -26,15 +26,15 @@ modality_to_sample_name: Dict[ModalityType, str] = {
 }
 
 def tabulate_similarity(
-  mode0: FloatTensor,
-  mode1: FloatTensor,
+  similarity: NDArray,
   mode0_modality: ModalityType,
   mode0_labels: str,
   mode1_labels: str,
   colour = True,
 ) -> str:
   """
-  Visualizes softmax(mode0 @ mode1.T, dim=-1)
+  Visualizes similarity, where similarity is defined as:
+    softmax(mode0 @ mode1.T, dim=-1)
   In other words:
   for each item in mode0 (rows),
     how similar are the elements in mode1 (columns)?
@@ -44,7 +44,6 @@ image         Reimu    Marisa
 reimu.jpg      0.98       0.02
 marisa.jpg     0             1
   """
-  similarity = softmax(mode0 @ mode1.T, dim=-1).cpu().numpy()
   return tabulate(
     [
       [stem, *format_row(row, colour=colour)] for stem, row in zip(

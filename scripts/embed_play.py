@@ -9,6 +9,7 @@ from pathlib import Path
 import fnmatch
 from typing import Callable, List
 from src.tabulation import tabulate_similarity
+from src.similarity import get_similarity
 
 # relative to current working directory, i.e. repository root of embedding-compare
 img_bind_dir = 'lib/ImageBind'
@@ -50,8 +51,10 @@ with torch.no_grad():
 print(
   "Vision x Text: \n",
   tabulate_similarity(
-    mode0=embeddings[ModalityType.VISION],
-    mode1=embeddings[ModalityType.TEXT],
+    similarity=get_similarity(
+      embeddings[ModalityType.VISION],
+      embeddings[ModalityType.TEXT],
+    ).cpu().numpy(),
     mode0_modality=ModalityType.VISION,
     mode0_labels=image_stems,
     mode1_labels=text_list,
@@ -60,8 +63,10 @@ print(
 print(
   "Text x Vision: \n",
   tabulate_similarity(
-    mode0=embeddings[ModalityType.TEXT],
-    mode1=embeddings[ModalityType.VISION],
+    similarity=get_similarity(
+      embeddings[ModalityType.TEXT],
+      embeddings[ModalityType.VISION],
+    ).cpu().numpy(),
     mode0_modality=ModalityType.TEXT,
     mode0_labels=text_list,
     mode1_labels=image_stems,
@@ -74,8 +79,10 @@ print(
 print(
   "Audio x Text: \n",
   tabulate_similarity(
-    mode0=embeddings[ModalityType.AUDIO],
-    mode1=embeddings[ModalityType.TEXT],
+    similarity=get_similarity(
+      embeddings[ModalityType.AUDIO],
+      embeddings[ModalityType.TEXT],
+    ).cpu().numpy(),
     mode0_modality=ModalityType.AUDIO,
     mode0_labels=audio_stems,
     mode1_labels=text_list,
@@ -83,9 +90,10 @@ print(
 )
 print(
   "Text x Audio: \n",
-  tabulate_similarity(
-    mode0=embeddings[ModalityType.TEXT],
-    mode1=embeddings[ModalityType.AUDIO],
+    similarity=get_similarity(
+      embeddings[ModalityType.TEXT],
+      embeddings[ModalityType.AUDIO],
+    ).cpu().numpy(),
     mode0_modality=ModalityType.TEXT,
     mode0_labels=text_list,
     mode1_labels=audio_stems,
@@ -98,8 +106,10 @@ print(
 print(
   "Audio x Vision: \n",
   tabulate_similarity(
-    mode0=embeddings[ModalityType.AUDIO],
-    mode1=embeddings[ModalityType.VISION],
+    similarity=get_similarity(
+      embeddings[ModalityType.AUDIO],
+      embeddings[ModalityType.VISION],
+    ).cpu().numpy(),
     mode0_modality=ModalityType.AUDIO,
     mode0_labels=audio_stems,
     mode1_labels=image_stems,
@@ -108,8 +118,10 @@ print(
 print(
   "Vision x Audio: \n",
   tabulate_similarity(
-    mode0=embeddings[ModalityType.VISION],
-    mode1=embeddings[ModalityType.AUDIO],
+    similarity=get_similarity(
+      embeddings[ModalityType.VISION],
+      embeddings[ModalityType.AUDIO],
+    ).cpu().numpy(),
     mode0_modality=ModalityType.VISION,
     mode0_labels=image_stems,
     mode1_labels=audio_stems,

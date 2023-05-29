@@ -11,7 +11,17 @@
       "module": "scripts.embed_play",
       "justMyCode": true,
       "env": {
-        "PYTHONPATH": "${workspaceFolder}/src:${workspaceFolder}/lib/ImageBind:${env.PYTHONPATH}"
+        "PYTHONPATH": "${workspaceFolder}/src:${workspaceFolder}/lib/ImageBind"
+      }
+    },
+    {
+      "name": "Python: HTML play",
+      "type": "python",
+      "request": "launch",
+      "module": "scripts.html_play",
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src:${workspaceFolder}/lib/ImageBind"
       }
     }
   ]
