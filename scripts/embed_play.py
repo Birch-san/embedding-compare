@@ -128,10 +128,10 @@ print(
   )
 )
 
-get_out_ix: Callable[[str], int] = lambda stem: int(stem.split('_', maxsplit=1)[0])
 out_root = 'out'
 makedirs(out_root, exist_ok=True)
 
+get_out_ix: Callable[[str], int] = lambda stem: int(stem.split('_', maxsplit=1)[0])
 out_dirs_unsorted: List[str] = fnmatch.filter(listdir(out_root), f'*_out')
 out_keyer: Callable[[str], int] = lambda fname: get_out_ix(Path(fname).stem)
 out_dirs: List[str] = [join(out_root, out_dir) for out_dir in sorted(out_dirs_unsorted, key=out_keyer)]

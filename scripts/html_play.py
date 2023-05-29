@@ -8,7 +8,9 @@ from numpy.typing import NDArray
 from src.markup import markup_similarities
 from dominate import document
 from models.imagebind_model import ModalityType
+from shutil import copyfile
 
+html_assets_dir = 'html_assets'
 assets_dir = 'assets'
 
 text_list=['Reimu', 'Flandre', 'Kochiya Sanae', 'Patchouli Knowlege', 'Rem', 'Saber', 'Matou Sakura', 'Youmu', 'anime girl', 'illustration', 'national anthem', 'bossa nova', 'chiptune']
@@ -42,10 +44,10 @@ similarities: NDArray = array([
   [0.  , 0.  , 0.01, 0.  , 0.  , 0.  , 0.  , 0.99, 0.  , 0.  , 0.  , 0.  , 0.  ]
 ])
 
-# get_out_ix: Callable[[str], int] = lambda stem: int(stem.split('_', maxsplit=1)[0])
 out_root = 'out'
 makedirs(out_root, exist_ok=True)
 
+# get_out_ix: Callable[[str], int] = lambda stem: int(stem.split('_', maxsplit=1)[0])
 # out_dirs_unsorted: List[str] = fnmatch.filter(listdir(out_root), f'*_out')
 # out_keyer: Callable[[str], int] = lambda fname: get_out_ix(Path(fname).stem)
 # out_dirs: List[str] = [join(out_root, out_dir) for out_dir in sorted(out_dirs_unsorted, key=out_keyer)]
@@ -55,7 +57,13 @@ makedirs(out_root, exist_ok=True)
 
 # print(f'Created output directory: {out_dir}')
 
-out_file = join(out_root, '000_out', 'similarity.html')
+out_dir = join(out_root, '000_out')
+out_assets_dir = join(out_dir, 'assets')
+makedirs(out_assets_dir, exist_ok=True)
+out_file = join(out_dir, 'vision_text_similarity.html')
+for img_path in image_paths:
+  copyfile(img_path, join(out_assets_dir, Path(img_path).name))
+copyfile(join(html_assets_dir, 'style.css'), join(out_dir, 'style.css'))
 
 doc: document = markup_similarities(
   similarity=similarities,
