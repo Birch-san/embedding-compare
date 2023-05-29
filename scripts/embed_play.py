@@ -12,6 +12,7 @@ from typing import Callable, List, Dict, Optional
 from numpy.typing import NDArray
 from itertools import permutations
 from shutil import copyfile
+from torch import Tensor
 from src.markup import markup_similarities, out_assets_dir_rel
 from src.tabulation import tabulate_similarity
 from src.similarity import get_similarity
@@ -48,11 +49,17 @@ device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 torch.set_printoptions(sci_mode=False)
 
 # Load data
-inputs = {
-  ModalityType.TEXT: data.load_and_transform_text(text_list or None, device),
-  ModalityType.VISION: data.load_and_transform_vision_data(image_paths_in or None, device),
-  ModalityType.AUDIO: data.load_and_transform_audio_data(audio_paths_in or None, device),
-}
+modalities_with_data: List[ModalityType] = []
+inputs: Dict[ModalityType, Tensor] = {}
+if text_list:
+  inputs[ModalityType.TEXT] = data.load_and_transform_text(text_list, device)
+  modalities_with_data += [ModalityType.TEXT]
+if image_paths_in:
+  inputs[ModalityType.VISION] = data.load_and_transform_vision_data(image_paths_in, device)
+  modalities_with_data += [ModalityType.VISION]
+if audio_paths_in:
+  inputs[ModalityType.AUDIO] = data.load_and_transform_audio_data(audio_paths_in, device)
+  modalities_with_data += [ModalityType.AUDIO]
 
 # Instantiate model
 model: ImageBindModel = imagebind_model.imagebind_huge(pretrained=True)
@@ -67,14 +74,6 @@ similarity_dicts: Dict[ModalityType, Dict[ModalityType, NDArray]] = {
   ModalityType.TEXT: {},
   ModalityType.AUDIO: {},
 }
-
-modalities_with_data: List[ModalityType] = []
-if text_list:
-  modalities_with_data += [ModalityType.TEXT]
-if image_paths_in:
-  modalities_with_data += [ModalityType.VISION]
-if audio_paths_in:
-  modalities_with_data += [ModalityType.AUDIO]
 
 for source, target in permutations(modalities_with_data, 2):
   similarity_dicts[source][target] = get_similarity(
