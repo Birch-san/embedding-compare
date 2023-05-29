@@ -11,8 +11,8 @@ from dominate import document
 from models.imagebind_model import ModalityType
 from shutil import copyfile
 
-html_assets_dir = 'html_assets'
 in_assets_dir = 'assets'
+html_assets_dir = 'html_assets'
 
 text_list=['Reimu', 'Flandre', 'Kochiya Sanae', 'Patchouli Knowlege', 'Rem', 'Saber', 'Matou Sakura', 'Youmu', 'anime girl', 'illustration', 'national anthem', 'bossa nova', 'chiptune']
 image_stems = ['reimu1', 'flandre1', 'sanae1', 'patchouli0', 'rem0', 'saber1', 'sakura1', 'youmu4']

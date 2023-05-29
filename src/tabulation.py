@@ -28,8 +28,8 @@ modality_to_sample_name: Dict[ModalityType, str] = {
 def tabulate_similarity(
   similarity: NDArray,
   mode0_modality: ModalityType,
-  mode0_labels: str,
-  mode1_labels: str,
+  mode0_names: str,
+  mode1_names: str,
   colour = True,
 ) -> str:
   """
@@ -47,9 +47,9 @@ marisa.jpg     0             1
   return tabulate(
     [
       [stem, *format_row(row, colour=colour)] for stem, row in zip(
-        mode0_labels,
+        mode0_names,
         similarity,
       )
     ],
-    headers=[modality_to_sample_name[mode0_modality], *mode1_labels],
+    headers=[modality_to_sample_name[mode0_modality], *mode1_names],
   )

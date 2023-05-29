@@ -7,7 +7,12 @@ from os import listdir, makedirs
 from os.path import join
 from pathlib import Path
 import fnmatch
-from typing import Callable, List
+from dominate import document
+from typing import Callable, List, Dict, Optional
+from numpy.typing import NDArray
+from itertools import permutations
+from shutil import copyfile
+from src.markup import markup_similarities, out_assets_dir_rel
 from src.tabulation import tabulate_similarity
 from src.similarity import get_similarity
 
@@ -17,12 +22,26 @@ img_bind_dir = 'lib/ImageBind'
 data.BPE_PATH = join(img_bind_dir, data.BPE_PATH)
 img_bind_assets_dir = join(img_bind_dir, '.assets')
 assets_dir = 'assets'
+html_assets_dir = 'html_assets'
 
 text_list=['Reimu', 'Flandre', 'Kochiya Sanae', 'Patchouli Knowlege', 'Rem', 'Saber', 'Matou Sakura', 'Youmu', 'anime girl', 'illustration', 'national anthem', 'bossa nova', 'chiptune']
 image_stems = ['reimu1', 'flandre1', 'sanae1', 'patchouli0', 'rem0', 'saber1', 'sakura1', 'youmu4']
-image_paths=[join(assets_dir, f'{asset}.jpg') for asset in image_stems]
+image_paths_in=[join(assets_dir, f'{asset}.jpg') for asset in image_stems]
+image_paths_out=[join(out_assets_dir_rel, f'{asset}.jpg') for asset in image_stems]
 audio_stems=['reimu', 'flandre', 'sanae', 'patchouli', 'rem1', 'saber', 'sakura-saber', 'youmu', 'british-anthem']
-audio_paths=[join(assets_dir, f'{asset}.wav') for asset in audio_stems]
+audio_paths_in=[join(assets_dir, f'{asset}.wav') for asset in audio_stems]
+audio_paths_out=[join(out_assets_dir_rel, f'{asset}.wav') for asset in audio_stems]
+
+modality_names: Dict[ModalityType, List[str]] = {
+  ModalityType.VISION: image_stems,
+  ModalityType.TEXT: text_list,
+  ModalityType.AUDIO: audio_stems,
+}
+modality_asset_references: Dict[ModalityType, Optional[List[str]]] = {
+  ModalityType.VISION: image_paths_out,
+  ModalityType.TEXT: None,
+  ModalityType.AUDIO: audio_paths_out,
+}
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -30,9 +49,9 @@ torch.set_printoptions(sci_mode=False)
 
 # Load data
 inputs = {
-  ModalityType.TEXT: data.load_and_transform_text(text_list, device),
-  ModalityType.VISION: data.load_and_transform_vision_data(image_paths, device),
-  ModalityType.AUDIO: data.load_and_transform_audio_data(audio_paths, device),
+  ModalityType.TEXT: data.load_and_transform_text(text_list or None, device),
+  ModalityType.VISION: data.load_and_transform_vision_data(image_paths_in or None, device),
+  ModalityType.AUDIO: data.load_and_transform_audio_data(audio_paths_in or None, device),
 }
 
 # Instantiate model
@@ -43,91 +62,39 @@ model.to(device)
 with torch.no_grad():
   embeddings = model(inputs)
 
+similarity_dicts: Dict[ModalityType, Dict[ModalityType, NDArray]] = {
+  ModalityType.VISION: {},
+  ModalityType.TEXT: {},
+  ModalityType.AUDIO: {},
+}
 
-# print(
-#   'Vision x Text: ',
-#   torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.TEXT].T, dim=-1),
-# )
-print(
-  "Vision x Text: \n",
-  tabulate_similarity(
-    similarity=get_similarity(
-      embeddings[ModalityType.VISION],
-      embeddings[ModalityType.TEXT],
-    ).cpu().numpy(),
-    mode0_modality=ModalityType.VISION,
-    mode0_labels=image_stems,
-    mode1_labels=text_list,
-  )
-)
-print(
-  "Text x Vision: \n",
-  tabulate_similarity(
-    similarity=get_similarity(
-      embeddings[ModalityType.TEXT],
-      embeddings[ModalityType.VISION],
-    ).cpu().numpy(),
-    mode0_modality=ModalityType.TEXT,
-    mode0_labels=text_list,
-    mode1_labels=image_stems,
-  )
-)
-# print(
-#   'Audio x Text: ',
-#   torch.softmax(embeddings[ModalityType.AUDIO] @ embeddings[ModalityType.TEXT].T, dim=-1),
-# )
-print(
-  "Audio x Text: \n",
-  tabulate_similarity(
-    similarity=get_similarity(
-      embeddings[ModalityType.AUDIO],
-      embeddings[ModalityType.TEXT],
-    ).cpu().numpy(),
-    mode0_modality=ModalityType.AUDIO,
-    mode0_labels=audio_stems,
-    mode1_labels=text_list,
-  )
-)
-print(
-  "Text x Audio: \n",
-  tabulate_similarity(
-    similarity=get_similarity(
-      embeddings[ModalityType.TEXT],
-      embeddings[ModalityType.AUDIO],
-    ).cpu().numpy(),
-    mode0_modality=ModalityType.TEXT,
-    mode0_labels=text_list,
-    mode1_labels=audio_stems,
-  )
-)
-# print(
-#   'Vision x Audio: ',
-#   torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.AUDIO].T, dim=-1),
-# )
-print(
-  "Audio x Vision: \n",
-  tabulate_similarity(
-    similarity=get_similarity(
-      embeddings[ModalityType.AUDIO],
-      embeddings[ModalityType.VISION],
-    ).cpu().numpy(),
-    mode0_modality=ModalityType.AUDIO,
-    mode0_labels=audio_stems,
-    mode1_labels=image_stems,
-  )
-)
-print(
-  "Vision x Audio: \n",
-  tabulate_similarity(
-    similarity=get_similarity(
-      embeddings[ModalityType.VISION],
-      embeddings[ModalityType.AUDIO],
-    ).cpu().numpy(),
-    mode0_modality=ModalityType.VISION,
-    mode0_labels=image_stems,
-    mode1_labels=audio_stems,
-  )
-)
+modalities_with_data: List[ModalityType] = []
+if text_list:
+  modalities_with_data += [ModalityType.TEXT]
+if image_paths_in:
+  modalities_with_data += [ModalityType.VISION]
+if audio_paths_in:
+  modalities_with_data += [ModalityType.AUDIO]
+
+for source, target in permutations(modalities_with_data, 2):
+  similarity_dicts[source][target] = get_similarity(
+    embeddings[source],
+    embeddings[target],
+  ).cpu().numpy()
+
+# yes I know these loops can be combined into the one above, but I prefer
+# to handle each type of output in isolation, to simplify breakpoint-debugging
+for source_modality, target_modalities in similarity_dicts.items():
+  for target_modality, similarities in target_modalities.items():
+    print(
+      f'{source_modality} x {target_modality}: \n',
+      tabulate_similarity(
+        similarity=similarity_dicts[source_modality][target_modality],
+        mode0_modality=source_modality,
+        mode0_names=modality_names[source_modality],
+        mode1_names=modality_names[target_modality],
+      )
+    )
 
 out_root = 'out'
 makedirs(out_root, exist_ok=True)
@@ -142,19 +109,26 @@ makedirs(out_dir)
 
 print(f'Created output directory: {out_dir}')
 
-# Expected output:
-#
-# Vision x Text:
-# tensor([[9.9761e-01, 2.3694e-03, 1.8612e-05],
-#         [3.3836e-05, 9.9994e-01, 2.4118e-05],
-#         [4.7997e-05, 1.3496e-02, 9.8646e-01]])
-#
-# Audio x Text:
-# tensor([[1., 0., 0.],
-#         [0., 1., 0.],
-#         [0., 0., 1.]])
-#
-# Vision x Audio:
-# tensor([[0.8070, 0.1088, 0.0842],
-#         [0.1036, 0.7884, 0.1079],
-#         [0.0018, 0.0022, 0.9960]])
+out_assets_dir_qual = join(out_dir, out_assets_dir_rel)
+makedirs(out_assets_dir_qual, exist_ok=True)
+for in_path in [*image_paths_in, *audio_paths_in]:
+  copyfile(in_path, join(out_assets_dir_qual, Path(in_path).name))
+copyfile(join(html_assets_dir, 'style.css'), join(out_dir, 'style.css'))
+# copyfile(join(html_assets_dir, 'interaction.mjs'), join(out_dir, 'interaction.mjs'))
+
+for source_modality, target_modalities in similarity_dicts.items():
+  for target_modality, similarities in target_modalities.items():
+    out_file = join(out_dir, f'{source_modality}_{target_modality}_similarity.html')
+    doc: document = markup_similarities(
+      similarity=similarities,
+      mode0_modality=source_modality,
+      mode1_modality=target_modality,
+      mode0_names=modality_names[source_modality],
+      mode0_asset_references=modality_asset_references[source_modality],
+      mode1_names=modality_names[target_modality],
+      mode1_asset_references=modality_asset_references[target_modality],
+    )
+    markup: str = str(doc)
+
+    with open(out_file, 'w') as f:
+      f.write(markup)
