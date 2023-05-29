@@ -32,3 +32,7 @@ From root of repository:
 ```bash
 python -m scripts.embed_play
 ```
+
+## Assets
+
+Audio assets are 5-second excerpts of copyrighted pieces, under fair use. Attribution in file metadata.

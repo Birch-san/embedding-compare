@@ -5,7 +5,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Module",
+      "name": "Python: Embed play",
       "type": "python",
       "request": "launch",
       "module": "scripts.embed_play",

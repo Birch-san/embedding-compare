@@ -2,13 +2,14 @@ import data
 import torch
 import data
 from models import imagebind_model
-from models.imagebind_model import ModalityType
+from models.imagebind_model import ModalityType, ImageBindModel
 from os import listdir, makedirs
 from os.path import join
 from pathlib import Path
 import platform
 import fnmatch
 from typing import Callable, List
+from tabulate import tabulate
 
 # relative to current working directory, i.e. repository root of embedding-compare
 img_bind_dir = 'lib/ImageBind'
@@ -17,11 +18,15 @@ data.BPE_PATH = join(img_bind_dir, data.BPE_PATH)
 img_bind_assets_dir = join(img_bind_dir, '.assets')
 assets_dir = 'assets'
 
-text_list=['A dog.', 'A car', 'A bird']
-image_paths=[join(img_bind_assets_dir, asset) for asset in ['dog_image.jpg', 'car_image.jpg', 'bird_image.jpg']]
-audio_paths=[join(img_bind_assets_dir, asset) for asset in ['dog_audio.wav', 'car_audio.wav', 'bird_audio.wav']]
+text_list=['Reimu', 'Flandre', 'Kochiya Sanae', 'Patchouli Knowlege', 'Rem', 'Saber', 'Matou Sakura', 'Youmu', 'anime girl', 'illustration', 'national anthem', 'bossa nova', 'chiptune']
+image_stems = ['reimu1', 'flandre1', 'sanae1', 'patchouli0', 'rem0', 'saber1', 'sakura1', 'youmu4']
+image_paths=[join(assets_dir, f'{asset}.jpg') for asset in image_stems]
+audio_stems=['reimu', 'flandre', 'sanae', 'patchouli', 'rem1', 'saber', 'sakura-saber', 'youmu', 'british-anthem']
+audio_paths=[join(assets_dir, f'{asset}.wav') for asset in audio_stems]
 
 device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+torch.set_printoptions(sci_mode=False)
 
 # Load data
 inputs = {
@@ -31,18 +36,98 @@ inputs = {
 }
 
 # Instantiate model
-model = imagebind_model.imagebind_huge(pretrained=True)
+model: ImageBindModel = imagebind_model.imagebind_huge(pretrained=True)
 model.eval()
 model.to(device)
 
-torch.compile(model, mode='max-autotune')
-
 with torch.no_grad():
-    embeddings = model(inputs)
+  embeddings = model(inputs)
 
-print(platform.python_version())
-print(torch.__version__)
 
+# print(
+#   'Vision x Text: ',
+#   torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.TEXT].T, dim=-1),
+# )
+print(
+  "Vision x Text: \n",
+  tabulate(
+    [
+      [stem, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for stem, row in zip(
+        image_stems,
+        torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.TEXT].T, dim=-1).cpu().numpy()
+      )
+    ],
+    headers=['image', *text_list],
+  )
+)
+print(
+  "Text x Vision: \n",
+  tabulate(
+    [
+      [label, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for label, row in zip(
+        text_list,
+        torch.softmax(embeddings[ModalityType.TEXT] @ embeddings[ModalityType.VISION].T, dim=-1).cpu().numpy()
+      )
+    ],
+    headers=['label', *image_stems],
+  )
+)
+# print(
+#   'Audio x Text: ',
+#   torch.softmax(embeddings[ModalityType.AUDIO] @ embeddings[ModalityType.TEXT].T, dim=-1),
+# )
+print(
+  "Audio x Text: \n",
+  tabulate(
+    [
+      [stem, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for stem, row in zip(
+        audio_stems,
+        torch.softmax(embeddings[ModalityType.AUDIO] @ embeddings[ModalityType.TEXT].T, dim=-1).cpu().numpy()
+      )
+    ],
+    headers=['image', *text_list],
+  )
+)
+print(
+  "Text x Audio: \n",
+  tabulate(
+    [
+      [label, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for label, row in zip(
+        text_list,
+        torch.softmax(embeddings[ModalityType.TEXT] @ embeddings[ModalityType.AUDIO].T, dim=-1).cpu().numpy()
+      )
+    ],
+    headers=['label', *audio_stems],
+  )
+)
+# print(
+#   'Vision x Audio: ',
+#   torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.AUDIO].T, dim=-1),
+# )
+print(
+  "Audio x Vision: \n",
+  tabulate(
+    [
+      [stem, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for stem, row in zip(
+        audio_stems,
+        torch.softmax(embeddings[ModalityType.AUDIO] @ embeddings[ModalityType.VISION].T, dim=-1).cpu().numpy()
+      )
+    ],
+    headers=['image', *image_stems],
+  )
+)
+print(
+  "Vision x Audio: \n",
+  tabulate(
+    [
+      [label, *[f'\033[95m{num:.2f}\033[0m' if num == row.max() else f'{num:.2f}' for num in row]] for label, row in zip(
+        image_stems,
+        torch.softmax(embeddings[ModalityType.VISION] @ embeddings[ModalityType.AUDIO].T, dim=-1).cpu().numpy()
+      )
+    ],
+    headers=['label', *audio_stems],
+  )
+)
 
 get_out_ix: Callable[[str], int] = lambda stem: int(stem.split('_', maxsplit=1)[0])
 out_root = 'out'
